@@ -21,7 +21,6 @@ int main(int argc, char const *argv[]) {
     time_t old_time;
 
     host_addr = args_to_addr(argc, argv);
-    sleep_timer = atoi(argv[3]);
 
     sock_desc = socket(AF_INET, SOCK_STREAM, 0);
     if(sock_desc < 0) {
@@ -50,8 +49,8 @@ struct sockaddr_in args_to_addr(int argc, char const *argv[]) {
     const char *host_name;
     struct sockaddr_in host_addr;
 
-    if(argc != 4) {
-        printf("Uso: '%s <serv_name> <serv_port> <sleep_timer>'.\n", argv[0]);
+    if(argc != 3) {
+        printf("Uso: '%s <serv_name> <serv_port>'.\n", argv[0]);
         exit(1);
     }
     host_name = argv[1];
@@ -69,7 +68,11 @@ struct sockaddr_in args_to_addr(int argc, char const *argv[]) {
 time_t send_time(int sock_desc) {
     time_t current_time;
     unsigned int converted;
+    char ready;
 
+    do {
+        read(sock_desc, &ready, 1);
+    } while(ready != 42);
     current_time = time(NULL);
 
     if(current_time == -1) {
@@ -79,7 +82,7 @@ time_t send_time(int sock_desc) {
     converted = htonl(current_time);
 
     printf("Enviando tiempo actual: %d.\n", (unsigned int) current_time);
-    write(sock_desc, &converted, 32);
+    write(sock_desc, &converted, sizeof(int));
     return current_time;
 }
 
@@ -90,6 +93,7 @@ void adjust(int sock_desc, time_t old_time) {
     double new_time;
 
     read(sock_desc, buffer, 25);
+    printf("Recibo '%s'.\n", buffer);
     adjust = atof(buffer);
 
     new_time = old_time + adjust;

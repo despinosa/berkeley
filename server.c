@@ -18,7 +18,8 @@ struct client {
 };
 
 
-struct clients* first_serve(int server_desc, int clients_q);
+struct client* first_serve(int server_desc, int clients_q);
+void serve(struct client* clients, int clients_q);
 
 int main(int argc, char const *argv[]) {
     int server_desc, port, sleep_timer, clients_q, opt;
@@ -60,7 +61,7 @@ int main(int argc, char const *argv[]) {
 
     clients = first_serve(server_desc, clients_q);
     do {
-        sleep(sleep_timer * 1000);
+        sleep(sleep_timer);
         serve(clients, clients_q);
     } while(1);
     return 0;
@@ -68,7 +69,7 @@ int main(int argc, char const *argv[]) {
 
 
 struct client* first_serve(int server_desc, int clients_q) {
-    char print_addr[INET_ADDRSTRLEN], buffer[25];
+    char print_addr[INET_ADDRSTRLEN], buffer[25], ready;
     unsigned int addr_len;
     float avg_time;
     struct client *clients;
@@ -79,21 +80,23 @@ struct client* first_serve(int server_desc, int clients_q) {
     listen(server_desc, clients_q);
 
     addr_len = sizeof(cli_addr);
+    ready = 42;
     for (int i = 0; i < clients_q; ++i) {
         memset(&cli_addr, 0, addr_len);
         clients[i].sock_desc = accept(server_desc, (struct sockaddr*) &cli_addr,
                                       &addr_len);
         if(clients[i].sock_desc < 0 ) {
             fprintf(stderr, "Error aceptando conexión (%d).\n", errno);
-            return;
+            exit(1);
         }
         inet_ntop(AF_INET, &cli_addr.sin_addr.s_addr, print_addr,
                   INET_ADDRSTRLEN);
-        printf("Cliente conectado en %s.\n", print_addr);
+        printf("Cliente %d conectado en %s.\n", i, print_addr);
+        write(clients[i].sock_desc, &ready, 1);
         read(clients[i].sock_desc, &clients[i].time, sizeof(int));
         clients[i].recvd = clock();
         clients[i].time = ntohl(clients[i].time);
-        printf("Hora de %s: %d.\n", print_addr, clients[i].time);
+        printf("Hora de %d: %d.\n", i, clients[i].time);
     }
 
     avg_time = clients[0].time;
@@ -113,16 +116,19 @@ struct client* first_serve(int server_desc, int clients_q) {
 
 
 void serve(struct client* clients, int clients_q) {
-    char print_addr[INET_ADDRSTRLEN], buffer[25];
+    char buffer[25], ready;
     float avg_time;
     struct sockaddr_in cli_addr;
 
 
+    ready = 42;
     for (int i = 0; i < clients_q; ++i) {
+        memset(&clients[i].time, 0, sizeof(int));
+        write(clients[i].sock_desc, &ready, 1);
         read(clients[i].sock_desc, &clients[i].time, sizeof(int));
         clients[i].recvd = clock();
         clients[i].time = ntohl(clients[i].time);
-        printf("Hora de %s: %d.\n", print_addr, clients[i].time);
+        printf("Hora de %d: %d.\n", i, clients[i].time);
     }
 
     avg_time = clients[0].time;
@@ -135,6 +141,7 @@ void serve(struct client* clients, int clients_q) {
     for (int i = 0; i < clients_q; ++i) {
         clients[i].delta_t = avg_time - clients[i].time;
         sprintf(buffer, "%025.10f", clients[i].delta_t);
+        printf("Envío '%s'.\n", buffer);
         write(clients[i].sock_desc, buffer, 25);
     }
 }
