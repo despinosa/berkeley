@@ -34,8 +34,11 @@ int main(int argc, char const *argv[]) {
         exit(1);
     }
     printf("Conectado a servidor.\n");
-    old_time = send_time(sock_desc);
-    adjust(sock_desc, old_time);
+    do {
+        old_time = send_time(sock_desc);
+        adjust(sock_desc, old_time);
+    } while(1);
+    close(sock_desc);
     return 0;
 }
 
@@ -76,6 +79,7 @@ time_t send_time(int sock_desc) {
 
     printf("Enviando tiempo actual: %d.\n", (unsigned int) current_time);
     write(sock_desc, &converted, 32);
+    return current_time;
 }
 
 
