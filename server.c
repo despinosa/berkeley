@@ -95,7 +95,6 @@ struct client* first_serve(int server_desc, int clients_q) {
         clients[i].time = ntohl(clients[i].time);
         printf("Hora de %s: %d.\n", print_addr, clients[i].time);
     }
-    // free(print_addr);
 
     avg_time = clients[0].time;
     for (int i = 1; i < clients_q; ++i) {
@@ -115,22 +114,16 @@ struct client* first_serve(int server_desc, int clients_q) {
 
 void serve(struct client* clients, int clients_q) {
     char print_addr[INET_ADDRSTRLEN], buffer[25];
-    unsigned int addr_len;
     float avg_time;
     struct sockaddr_in cli_addr;
 
 
-    clients = malloc(sizeof(struct client) * clients_q);
-    listen(server_desc, clients_q);
-
-    addr_len = sizeof(cli_addr);
     for (int i = 0; i < clients_q; ++i) {
         read(clients[i].sock_desc, &clients[i].time, sizeof(int));
         clients[i].recvd = clock();
         clients[i].time = ntohl(clients[i].time);
         printf("Hora de %s: %d.\n", print_addr, clients[i].time);
     }
-    // free(print_addr);
 
     avg_time = clients[0].time;
     for (int i = 1; i < clients_q; ++i) {

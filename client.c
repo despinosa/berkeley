@@ -12,7 +12,7 @@
 
 time_t send_time(int sock_desc);
 void adjust(int sock_desc, time_t old_time);
-struct sockaddr_in parse_addr(int argc, char const *argv[]);
+struct sockaddr_in args_to_addr(int argc, char const *argv[]);
 
 
 int main(int argc, char const *argv[]) {
@@ -20,7 +20,8 @@ int main(int argc, char const *argv[]) {
     struct sockaddr_in host_addr;
     time_t old_time;
 
-    host_addr = parse_addr(argc, argv);
+    host_addr = args_to_addr(argc, argv);
+    sleep_timer = atoi(argv[3]);
 
     sock_desc = socket(AF_INET, SOCK_STREAM, 0);
     if(sock_desc < 0) {
@@ -44,13 +45,13 @@ int main(int argc, char const *argv[]) {
 
 
 
-struct sockaddr_in parse_addr(int argc, char const *argv[]) {
+struct sockaddr_in args_to_addr(int argc, char const *argv[]) {
     int host_port;
     const char *host_name;
     struct sockaddr_in host_addr;
 
-    if(argc != 3) {
-        printf("Uso: '%s <serv_name> <serv_port>'.\n", argv[0]);
+    if(argc != 4) {
+        printf("Uso: '%s <serv_name> <serv_port> <sleep_timer>'.\n", argv[0]);
         exit(1);
     }
     host_name = argv[1];
